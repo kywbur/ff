@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Livestream Access - FightFactory</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      max-width: 600px;
+      padding: 20px;
+      border: 1px solid #e74c3c;
+      border-radius: 10px;
+      background-color: #222;
+    }
+
+    h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 16px;
+      border: 2px solid #e74c3c;
+      border-radius: 5px;
+      background-color: #333;
+      color: #fff;
+      margin-bottom: 20px;
+      width: 80%;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      background-color: #e74c3c;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #c0392b;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 18px;
+    }
+
+    .error {
+      color: #e74c3c;
+    }
+
+    .success {
+      color: #2ecc71;
+    }
+
+    #livestream {
+      display: none;
+      margin-top: 20px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 315px;
+      border: none;
+      border-radius: 10px;
+    }
+
+    #warning {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #fff;
+    }
+  </style>
+  <!-- Include Supabase Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>Enter Your Access Code</h1>
+    <input placeholder="Enter Code" id="codeInput" type="text">
+    <button onclick="validateCode()">Unlock</button>
+    <button onclick="transferAccess()">Transfer Access</button>
+    <p id="message" class="message"></p>
+    <div id="livestream">
+      <iframe src="https://www.youtube.com/embed/jfKfPfyJRdk" allowfullscreen></iframe>
+      <p id="warning">Enjoy the livestream! Please do not refresh or leave the page, as your access code is one-time use.</p>
+    </div>
+  </div>
+
+  <script>
+    // Initialize Supabase client at the top
+    const supabaseUrl = "https://opqogldmsrufjiuijkii.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wcW9nbGRtc3J1ZmppdWlqa2lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxMjA3MzcsImV4cCI6MjA1NzY5NjczN30.RjuSkswo4wOIwuD8KXJ_Q4Bi85Pt-eO2_2pEq13JU3A";
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+
+    // Function to get or generate a browser ID
+    function getBrowserId() {
+      let id = localStorage.getItem("browserId");
+      if (!id) {
+        id = "BID-" + Math.random().toString(36).substring(2, 15);
+        localStorage.setItem("browserId", id);
+      }
+      return id;
+    }
+
+    // Function to validate the access code
+    async function validateCode() {
+      const code = document.getElementById("codeInput").value;
+      const messageElement = document.getElementById("message");
+      const browserId = getBrowserId();
+
+      if (!code) {
+        messageElement.innerText = "Please enter a code.";
+        messageElement.className = "error";
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("access_codes")
+        .select("*")
+        .eq("code", code)
+        .single();
+
+      if (error) {
+        messageElement.innerText = "Error validating code.";
+        messageElement.className = "error";
+        return;
+      }
+
+      if (!data) {
+        messageElement.innerText = "Invalid code.";
+        messageElement.className = "error";
+        return;
+      }
+
+      if (data.status === "active" && data.browser_id !== browserId) {
+        messageElement.innerText = "This code is in use on another device.";
+        messageElement.className = "error";
+        return;
+      }
+
+      // Update the code status and browser ID
+      const { error: updateError } = await supabase
+        .from("access_codes")
+        .update({ status: "active", browser_id: browserId })
+        .eq("code", code);
+
+      if (updateError) {
+        messageElement.innerText = "Error updating code status.";
+        messageElement.className = "error";
+        return;
+      }
+
+      messageElement.innerText = "Access Granted! Unlocking Stream...";
+      messageElement.className = "success";
+      document.getElementById("livestream").style.display = "block";
+
+      window.addEventListener("beforeunload", function (event) {
+        event.preventDefault();
+        event.returnValue = "Warning: Leaving or refreshing this page will invalidate your access code.";
+      });
+    }
+
+    // Function to transfer access to another device
+    async function transferAccess() {
+      const code = document.getElementById("codeInput").value;
+      const messageElement = document.getElementById("message");
+
+      if (!code) {
+        messageElement.innerText = "Please enter a code.";
+        messageElement.className = "error";
+        return;
+      }
+
+      const { error } = await supabase
+        .from("access_codes")
+        .update({ status: "inactive", browser_id: null })
+        .eq("code", code);
+
+      if (error) {
+        messageElement.innerText = "Error transferring access.";
+        messageElement.className = "error";
+        return;
+      }
+
+      messageElement.innerText = "Access has been revoked. You can now use this code on a new device.";
+      messageElement.className = "success";
+      localStorage.removeItem("browserId");
+    }
+  </script>
+</body>
+</html>
