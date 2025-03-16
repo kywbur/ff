@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FightFactory</title>
+  <meta name="description" content="Welcome to FightFactory - Purchase tickets and watch livestreams of epic fights.">
+  
   <style>
     /* General Reset */
     body, html {
@@ -53,7 +55,7 @@
       font-size: 18px;
       font-weight: bold;
       color: #fff;
-      background-color: #e74c3c; /* Red color for buttons */
+      background-color: #e74c3c;
       border: none;
       border-radius: 5px;
       cursor: pointer;
@@ -61,7 +63,7 @@
     }
 
     .buttons button:hover {
-      background-color: #c0392b; /* Darker red on hover */
+      background-color: #c0392b;
     }
   </style>
 </head>
@@ -76,7 +78,7 @@
     <h1>Welcome to FightFactory</h1>
     <div class="buttons">
       <button onclick="purchase()">Purchase Here</button>
-      <button onclick="window.location.href='livestream.html'">Watch Livestream</button>
+      <button onclick="redirectToLivestream()">Watch Livestream</button>
     </div>
   </div>
 
@@ -84,8 +86,11 @@
   <script>
     function purchase() {
       alert("Redirecting to purchase page...");
-      // Replace with your actual purchase link
-      window.location.href = "https://your-purchase-link.com";
+      window.location.href = "https://your-purchase-link.com"; // Update with your actual purchase link
+    }
+
+    function redirectToLivestream() {
+      window.location.href = "/livestream.html"; // Uses absolute path to prevent 404 errors
     }
   </script>
 </body>
