@@ -1,0 +1,14 @@
+{
+  "parent": "footer-group.json",
+  "context": {
+    "market": "my"
+  },
+  "sections": {
+    "footer": {
+      "settings": {
+        "newsletter_enable": false
+      },
+      "blocks": {}
+    }
+  }
+}
