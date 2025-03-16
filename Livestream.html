@@ -4,6 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Livestream Access - FightFactory</title>
+  <meta name="description" content="Enter your access code to watch the FightFactory livestream.">
+  
   <style>
     body {
       background-color: #111;
@@ -105,12 +107,10 @@
   </div>
 
   <script>
-    // Initialize Supabase client at the top
     const supabaseUrl = "https://opqogldmsrufjiuijkii.supabase.co";
-    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9wcW9nbGRtc3J1ZmppdWlqa2lpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDIxMjA3MzcsImV4cCI6MjA1NzY5NjczN30.RjuSkswo4wOIwuD8KXJ_Q4Bi85Pt-eO2_2pEq13JU3A";
+    const supabaseKey = "your-supabase-anon-key"; // Replace with your actual Supabase anon key
     const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    // Function to get or generate a browser ID
     function getBrowserId() {
       let id = localStorage.getItem("browserId");
       if (!id) {
@@ -120,7 +120,6 @@
       return id;
     }
 
-    // Function to validate the access code
     async function validateCode() {
       const code = document.getElementById("codeInput").value;
       const messageElement = document.getElementById("message");
@@ -138,14 +137,8 @@
         .eq("code", code)
         .single();
 
-      if (error) {
-        messageElement.innerText = "Error validating code.";
-        messageElement.className = "error";
-        return;
-      }
-
-      if (!data) {
-        messageElement.innerText = "Invalid code.";
+      if (error || !data) {
+        messageElement.innerText = "Invalid or expired code.";
         messageElement.className = "error";
         return;
       }
@@ -156,53 +149,14 @@
         return;
       }
 
-      // Update the code status and browser ID
-      const { error: updateError } = await supabase
+      await supabase
         .from("access_codes")
         .update({ status: "active", browser_id: browserId })
         .eq("code", code);
 
-      if (updateError) {
-        messageElement.innerText = "Error updating code status.";
-        messageElement.className = "error";
-        return;
-      }
-
-      messageElement.innerText = "Access Granted! Unlocking Stream...";
+      messageElement.innerText = "Access Granted!";
       messageElement.className = "success";
       document.getElementById("livestream").style.display = "block";
-
-      window.addEventListener("beforeunload", function (event) {
-        event.preventDefault();
-        event.returnValue = "Warning: Leaving or refreshing this page will invalidate your access code.";
-      });
-    }
-
-    // Function to transfer access to another device
-    async function transferAccess() {
-      const code = document.getElementById("codeInput").value;
-      const messageElement = document.getElementById("message");
-
-      if (!code) {
-        messageElement.innerText = "Please enter a code.";
-        messageElement.className = "error";
-        return;
-      }
-
-      const { error } = await supabase
-        .from("access_codes")
-        .update({ status: "inactive", browser_id: null })
-        .eq("code", code);
-
-      if (error) {
-        messageElement.innerText = "Error transferring access.";
-        messageElement.className = "error";
-        return;
-      }
-
-      messageElement.innerText = "Access has been revoked. You can now use this code on a new device.";
-      messageElement.className = "success";
-      localStorage.removeItem("browserId");
     }
   </script>
 </body>
